@@ -47,13 +47,14 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Set up static file serving for production, or Vite middleware for development
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    app.use(express.static(path.resolve(import.meta.dirname, "../dist/public")));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.resolve(import.meta.dirname, "../dist/public/index.html"));
+    });
   }
 
   // ALWAYS serve the app on port 5000
