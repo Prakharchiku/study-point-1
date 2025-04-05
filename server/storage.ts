@@ -138,7 +138,7 @@ export class MemStorage implements IStorage {
     if (!stats) {
       stats = await this.createUserStats({ 
         userId, 
-        currency: 0, 
+        currency: 100, 
         totalStudyTime: 0, 
         todayStudyTime: 0, 
         totalSessions: 0, 
@@ -257,7 +257,7 @@ export class DatabaseStorage implements IStorage {
     if (!stats) {
       stats = await this.createUserStats({ 
         userId, 
-        currency: 0, 
+        currency: 100, 
         totalStudyTime: 0, 
         todayStudyTime: 0, 
         totalSessions: 0, 
