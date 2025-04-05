@@ -120,6 +120,10 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const startTimer = useCallback(() => {
     if (timerState === 'running') return;
     
+    // Update streak when starting timer
+    apiRequest('POST', '/api/protected/update-streak')
+      .then(() => refetchUserStats());
+    
     if (timerState === 'idle') {
       startTimeRef.current = Date.now();
       setElapsedTime(0);
