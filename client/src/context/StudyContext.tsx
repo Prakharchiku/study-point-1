@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, ReactNode } from 'react';
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -38,40 +38,32 @@ interface StudyContextType {
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
 
-export const useStudyContext = () => {
-  const context = useContext(StudyContext);
-  if (!context) {
-    throw new Error("useStudyContext must be used within a StudyProvider");
-  }
-  return context;
-};
-
-export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function StudyProvider({ children }: { children: ReactNode }) {
   // Get logged in user ID from auth state
   const { user } = useAuth();
   const userId = user?.id || 0;
   
   // Timer state
-  const [timerState, setTimerState] = useState<'idle' | 'running' | 'paused'>('idle');
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [focusProgressPercent, setFocusProgressPercent] = useState(0);
-  const [lastCoinUpdate, setLastCoinUpdate] = useState(0);
+  const [timerState, setTimerState] = React.useState<'idle' | 'running' | 'paused'>('idle');
+  const [elapsedTime, setElapsedTime] = React.useState(0);
+  const [focusProgressPercent, setFocusProgressPercent] = React.useState(0);
+  const [lastCoinUpdate, setLastCoinUpdate] = React.useState(0);
   const earnRate = 10; // coins per minute
   
   // Break state
-  const [activeBreak, setActiveBreak] = useState<any | null>(null);
-  const [breakTimeRemaining, setBreakTimeRemaining] = useState(0);
+  const [activeBreak, setActiveBreak] = React.useState<any | null>(null);
+  const [breakTimeRemaining, setBreakTimeRemaining] = React.useState(0);
   
   // Animation state
-  const [coinAnimationProps, setCoinAnimationProps] = useState({
+  const [coinAnimationProps, setCoinAnimationProps] = React.useState({
     amount: 0,
     isVisible: false
   });
   
   // Refs
-  const startTimeRef = useRef<number | null>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const breakIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = React.useRef<number | null>(null);
+  const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const breakIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   
   // Hooks
   const { toast } = useToast();
@@ -117,7 +109,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   
   // Timer functions
-  const startTimer = useCallback(() => {
+  const startTimer = React.useCallback(() => {
     if (timerState === 'running') return;
     
     // Update streak when starting timer
@@ -173,9 +165,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }, 100);
     
-  }, [timerState, elapsedTime, lastCoinUpdate, earnRate]);
+  }, [timerState, elapsedTime, lastCoinUpdate, earnRate, user, createSessionMutation, refetchUserStats]);
   
-  const pauseTimer = useCallback(() => {
+  const pauseTimer = React.useCallback(() => {
     if (timerState !== 'running') return;
     
     if (timerIntervalRef.current) {
@@ -186,7 +178,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setTimerState('paused');
   }, [timerState]);
   
-  const stopTimer = useCallback(() => {
+  const stopTimer = React.useCallback(() => {
     if (timerState === 'idle') return;
     
     if (timerIntervalRef.current) {
@@ -232,9 +224,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setLastCoinUpdate(0);
     setFocusProgressPercent(0);
     startTimeRef.current = null;
-  }, [timerState, elapsedTime, earnRate, createSessionMutation, toast, userId]);
+  }, [timerState, elapsedTime, earnRate, createSessionMutation, toast, userId, userStats, updateStatsMutation, refetchUserStats]);
   
-  const updateFocusProgress = useCallback(() => {
+  const updateFocusProgress = React.useCallback(() => {
     // Update progress bar (resets every minute)
     const seconds = Math.floor((elapsedTime / 1000) % 60);
     const progressPercent = (seconds / 60) * 100;
@@ -242,7 +234,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [elapsedTime]);
   
   // Break functions
-  const purchaseBreak = useCallback((breakOption: any) => {
+  const purchaseBreak = React.useCallback((breakOption: any) => {
     // Deduct cost
     if (!userStats || !breakOption) return;
     
@@ -277,7 +269,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   }, [userStats, updateStatsMutation, timerState, pauseTimer, toast]);
   
-  const endBreak = useCallback(() => {
+  const endBreak = React.useCallback(() => {
     if (breakIntervalRef.current) {
       clearInterval(breakIntervalRef.current);
       breakIntervalRef.current = null;
@@ -293,7 +285,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [toast]);
   
   // Clean up intervals on unmount
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
@@ -305,7 +297,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
   
   // Fetch user stats when component mounts
-  useEffect(() => {
+  React.useEffect(() => {
     if (user?.id) {
       refetchUserStats();
     }
@@ -336,4 +328,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
     </StudyContext.Provider>
   );
-};
+}
+
+export function useStudyContext() {
+  const context = useContext(StudyContext);
+  if (context === undefined) {
+    throw new Error('useStudyContext must be used within a StudyProvider');
+  }
+  return context;
+}
