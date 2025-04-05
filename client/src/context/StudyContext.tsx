@@ -307,6 +307,20 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [user?.id, refetchUserStats]);
   
+  // Grant coins for testing
+  const grantCoins = async () => {
+    try {
+      await apiRequest('POST', `/api/grant-coins/${userId}`);
+      refetchUserStats();
+      toast({
+        title: "Coins granted!",
+        description: "Added 100 coins to your balance"
+      });
+    } catch (error) {
+      console.error('Failed to grant coins:', error);
+    }
+  };
+
   const value = {
     timerState,
     elapsedTime,
@@ -324,7 +338,8 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     stopTimer,
     updateFocusProgress,
     purchaseBreak,
-    endBreak
+    endBreak,
+    grantCoins
   };
 
   return (

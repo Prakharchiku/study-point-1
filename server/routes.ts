@@ -144,6 +144,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Special endpoint to grant coins (for testing)
+  app.post("/api/grant-coins/:userId", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const stats = await storage.getUserStats(userId);
+      const currentCoins = stats?.currency || 0;
+      
+      await storage.updateUserStats(userId, {
+        currency: currentCoins + 100
+      });
+
+      res.json({ message: "Added 100 coins" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to grant coins" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
