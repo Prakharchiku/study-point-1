@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create default stats for user if they don't exist
         stats = await storage.createUserStats({
           userId,
-          currency: 0,
+          currency: 100, // Give users some starting currency
           totalStudyTime: 0,
           todayStudyTime: 0,
           totalSessions: 0,
