@@ -68,14 +68,11 @@ export class MemStorage implements IStorage {
 
   // Break methods
   async getBreaks(): Promise<Break[]> {
-    return Array.from(this.breaks.values());
+    return [];
   }
 
   async createBreak(breakData: InsertBreak): Promise<Break> {
-    const id = breakData.id || this.breaks.size + 1;
-    const newBreak = { ...breakData, id };
-    this.breaks.set(id, newBreak);
-    return newBreak;
+    throw new Error("MemStorage does not support break creation");
   }
 
   // User methods
