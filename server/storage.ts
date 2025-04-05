@@ -12,21 +12,21 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Study sessions methods
   getStudySessions(userId: number): Promise<StudySession[]>;
   createStudySession(session: InsertStudySession): Promise<StudySession>;
-  
+
   // User stats methods
   getUserStats(userId: number): Promise<UserStats | undefined>;
   createUserStats(stats: InsertUserStats): Promise<UserStats>;
   updateUserStats(userId: number, stats: Partial<InsertUserStats>): Promise<UserStats>;
-  
+
   // Break methods
   getBreaks(): Promise<Break[]>;
   getBreak(id: number): Promise<Break | undefined>;
   createBreak(breakItem: InsertBreak): Promise<Break>;
-  
+
   // Session store
   sessionStore: session.Store;
 }
@@ -40,12 +40,12 @@ export class MemStorage implements IStorage {
   private studySessions: Map<number, StudySession>;
   private userStats: Map<number, UserStats>;
   private breaks: Map<number, Break>;
-  
+
   private userId: number;
   private sessionId: number;
   private statsId: number;
   private breakId: number;
-  
+
   public sessionStore: session.Store;
 
   constructor() {
@@ -53,66 +53,18 @@ export class MemStorage implements IStorage {
     this.studySessions = new Map();
     this.userStats = new Map();
     this.breaks = new Map();
-    
+
     this.userId = 1;
     this.sessionId = 1;
     this.statsId = 1;
     this.breakId = 1;
-    
+
     // Create memory store for sessions
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
   }
 
-  private initializeBreaks() {
-    // Based on scientifically supported study-to-break ratios
-    const defaultBreaks: InsertBreak[] = [
-      { 
-        id: 1,
-        name: "Pomodoro Break (5 min)", 
-        description: "Based on the Pomodoro Technique; keeps your brain fresh and focused after 25 minutes of study", 
-        duration: 5, 
-        cost: 50
-      },
-      { 
-        id: 2,
-        name: "Focus Break (10 min)", 
-        description: "Helps maintain high mental performance before fatigue kicks in after 50 minutes of study", 
-        duration: 10, 
-        cost: 100
-      },
-      { 
-        id: 3,
-        name: "Ultradian Break (20 min)", 
-        description: "Follows the brain's ultradian rhythm, where focus naturally dips after 90 minutes", 
-        duration: 20, 
-        cost: 200
-      },
-      { 
-        id: 4,
-        name: "Reset Break (30 min)", 
-        description: "Gives your brain and body time to reset after 2 hours; helps prevent cognitive overload", 
-        duration: 30, 
-        cost: 300
-      },
-      { 
-        id: 5,
-        name: "Long Recovery (60 min)", 
-        description: "Extended rest for full recovery after 3-4 hours; perfect for a meal, walk, or power nap", 
-        duration: 60, 
-        cost: 600
-      }
-    ];
-    
-    // Clear existing breaks
-    this.breaks.clear();
-    
-    // Add new breaks
-    defaultBreaks.forEach(breakItem => {
-      this.breaks.set(breakItem.id, breakItem);
-    });
-  }
 
   // Break methods
   async getBreaks(): Promise<Break[]> {
@@ -144,14 +96,14 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
-  
+
   // Study sessions methods
   async getStudySessions(userId: number): Promise<StudySession[]> {
     return Array.from(this.studySessions.values())
       .filter(session => session.userId === userId)
       .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
   }
-  
+
   async createStudySession(insertSession: InsertStudySession): Promise<StudySession> {
     const id = this.sessionId++;
     const date = new Date();
@@ -159,14 +111,14 @@ export class MemStorage implements IStorage {
     this.studySessions.set(id, session);
     return session;
   }
-  
+
   // User stats methods
   async getUserStats(userId: number): Promise<UserStats | undefined> {
     return Array.from(this.userStats.values()).find(
       (stats) => stats.userId === userId,
     );
   }
-  
+
   async createUserStats(insertStats: InsertUserStats): Promise<UserStats> {
     const id = this.statsId++;
     const lastStudyDate = new Date();
@@ -187,10 +139,10 @@ export class MemStorage implements IStorage {
     this.userStats.set(id, stats);
     return stats;
   }
-  
+
   async updateUserStats(userId: number, updatedStats: Partial<InsertUserStats>): Promise<UserStats> {
     let stats = await this.getUserStats(userId);
-    
+
     if (!stats) {
       stats = await this.createUserStats({ 
         userId, 
@@ -205,25 +157,25 @@ export class MemStorage implements IStorage {
         experience: 0
       });
     }
-    
+
     const updatedUserStats: UserStats = { 
       ...stats, 
       ...updatedStats 
     };
-    
+
     this.userStats.set(stats.id, updatedUserStats);
     return updatedUserStats;
   }
-  
+
   // Break methods
   async getBreaks(): Promise<Break[]> {
     return Array.from(this.breaks.values());
   }
-  
+
   async getBreak(id: number): Promise<Break | undefined> {
     return this.breaks.get(id);
   }
-  
+
   async createBreak(insertBreak: InsertBreak): Promise<Break> {
     const id = this.breakId++;
     const breakItem: Break = { ...insertBreak, id };
@@ -248,7 +200,7 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
-    
+
     // Initialize default breaks
     this.initializeDefaultBreaks();
   }
@@ -335,7 +287,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserStats(userId: number, updatedStats: Partial<InsertUserStats>): Promise<UserStats> {
     let stats = await this.getUserStats(userId);
-    
+
     if (!stats) {
       stats = await this.createUserStats({ 
         userId, 
@@ -350,13 +302,13 @@ export class DatabaseStorage implements IStorage {
         experience: 0
       });
     }
-    
+
     const [updatedUserStats] = await db
       .update(userStats)
       .set(updatedStats)
       .where(eq(userStats.id, stats.id))
       .returning();
-      
+
     return updatedUserStats;
   }
 
