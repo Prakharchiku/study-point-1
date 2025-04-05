@@ -46,8 +46,9 @@ export const useStudyContext = () => {
 };
 
 export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Mock user ID - in a real app, this would come from authentication
-  const userId = 1;
+  // Get logged in user ID from auth state
+  const { user } = useAuth();
+  const userId = user?.id || 0;
   
   // Timer state
   const [timerState, setTimerState] = useState<'idle' | 'running' | 'paused'>('idle');
@@ -137,13 +138,14 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const currentMinutes = Math.floor(elapsed / 60000);
       if (currentMinutes > lastCoinUpdate) {
         const coinsToAdd = earnRate * (currentMinutes - lastCoinUpdate);
+        const newTotal = (userStats?.currency || 0) + coinsToAdd;
         
         // Update backend with new coins
         updateStatsMutation.mutate({
-          currency: (userStats?.currency || 0) + coinsToAdd
-        });
-
-        // Trigger coin animation
+          currency: newTotal
+        }, {
+          onSuccess: () => {
+            // Trigger coin animation only after backend update succeeds
         setCoinAnimationProps({
           amount: coinsToAdd,
           isVisible: true
