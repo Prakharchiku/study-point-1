@@ -142,24 +142,27 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         
         // Update backend with new coins
         updateStatsMutation.mutate({
-          currency: newTotal
+          currency: newTotal,
+          totalSessions: userStats?.totalSessions || 0
         }, {
           onSuccess: () => {
             // Trigger coin animation only after backend update succeeds
-        setCoinAnimationProps({
-          amount: coinsToAdd,
-          isVisible: true
+            setCoinAnimationProps({
+              amount: coinsToAdd,
+              isVisible: true
+            });
+            
+            // Reset animation after a delay
+            setTimeout(() => {
+              setCoinAnimationProps(prev => ({
+                ...prev,
+                isVisible: false
+              }));
+            }, 3000);
+            
+            setLastCoinUpdate(currentMinutes);
+          }
         });
-        
-        // Reset animation after a delay
-        setTimeout(() => {
-          setCoinAnimationProps(prev => ({
-            ...prev,
-            isVisible: false
-          }));
-        }, 3000);
-        
-        setLastCoinUpdate(currentMinutes);
       }
     }, 100);
     
@@ -194,12 +197,14 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         userId: user?.id || 0,
         duration: sessionDuration,
         coinsEarned
-      });
-      
-      // Update stats with coins earned
-      updateStatsMutation.mutate({
-        currency: (userStats?.currency || 0) + coinsEarned,
-        totalSessions: (userStats?.totalSessions || 0) + 1
+      }, {
+        onSuccess: () => {
+          // Update stats with coins earned and increment session count
+          updateStatsMutation.mutate({
+            currency: (userStats?.currency || 0) + coinsEarned,
+            totalSessions: (userStats?.totalSessions || 0) + 1
+          });
+        }
       });
       
       toast({
