@@ -53,13 +53,39 @@ export class MemStorage implements IStorage {
   }
 
   private initializeBreaks() {
-    // Adjusted to encourage 25-30 minutes of study for a 5-minute break
-    // With earnRate of 10 coins per minute, 25 minutes = 250 coins
+    // Based on scientifically supported study-to-break ratios
+    // With earnRate of 10 coins per minute
     const defaultBreaks: InsertBreak[] = [
-      { name: "5 Minute Break", description: "A quick refresher", duration: 5, cost: 250 }, // Requires ~25 min of study
-      { name: "10 Minute Break", description: "Time for a snack", duration: 10, cost: 300 }, // Requires 30 min of study
-      { name: "20 Minute Break", description: "Proper rest time", duration: 20, cost: 450 }, // Requires 45 min of study
-      { name: "30 Minute Break", description: "Extended relaxation", duration: 30, cost: 600 } // Requires 60 min of study
+      { 
+        name: "5 Minute Break", 
+        description: "Based on Pomodoro Technique; keeps your brain fresh and focused", 
+        duration: 5, 
+        cost: 250  // 25 min study
+      },
+      { 
+        name: "10 Minute Break", 
+        description: "Helps maintain high mental performance before fatigue", 
+        duration: 10, 
+        cost: 500  // 50 min study
+      },
+      { 
+        name: "20 Minute Break", 
+        description: "Follows brain's ultradian rhythm cycle of 90 minutes", 
+        duration: 20, 
+        cost: 900  // 90 min study
+      },
+      { 
+        name: "30 Minute Break", 
+        description: "Gives your brain time to reset; prevents cognitive overload", 
+        duration: 30, 
+        cost: 1200  // 2 hours (120 min) study
+      },
+      { 
+        name: "60 Minute Break", 
+        description: "Extended rest for full recovery; time for a meal, walk, or nap", 
+        duration: 60, 
+        cost: 2100  // 3.5 hours (210 min) study
+      }
     ];
     
     defaultBreaks.forEach(breakItem => this.createBreak(breakItem));

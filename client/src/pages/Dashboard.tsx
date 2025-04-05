@@ -1,8 +1,15 @@
 import { Plus } from "lucide-react";
 import { useRef } from "react";
+import StudyTimer from "@/components/StudyTimer";
+import StudyStats from "@/components/StudyStats";
+import BreakStore from "@/components/BreakStore";
+import Achievements from "@/components/Achievements";
+import CoinAnimation from "@/components/CoinAnimation";
+import BreakModal from "@/components/BreakModal";
+import { useStudyContext } from "@/context/StudyContext";
 import { StudyProvider } from "@/context/StudyContext";
 
-// Create a temporary dashboard without dependencies on the context for testing
+// This ensures the Dashboard component has access to the StudyProvider
 export default function Dashboard() {
   return (
     <StudyProvider>
@@ -11,8 +18,10 @@ export default function Dashboard() {
   );
 }
 
-// Separate component wrapped by the StudyProvider
+// Inner component that uses the context
 function DashboardContent() {
+  const { userStats, coinAnimationProps, activeBreak } = useStudyContext();
+  
   const timerRef = useRef<HTMLDivElement>(null);
   const currencyRef = useRef<HTMLDivElement>(null);
 
@@ -28,7 +37,7 @@ function DashboardContent() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="ml-1 font-bold">0</span>
+            <span className="ml-1 font-bold">{userStats?.currency || 0}</span>
           </div>
         </div>
       </header>
@@ -36,27 +45,24 @@ function DashboardContent() {
       <main className="container mx-auto px-4 py-6 flex-grow">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div ref={timerRef} className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-medium mb-4">Study Timer</h2>
-              <p>Study timer component would go here</p>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-medium mb-4">Study Stats</h2>
-              <p>Study stats component would go here</p>
-            </div>
+            <StudyTimer />
+            <StudyStats />
           </div>
           <div className="lg:col-span-4">
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h2 className="text-lg font-medium mb-4">Break Store</h2>
-              <p>Break store component would go here</p>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-medium mb-4">Achievements</h2>
-              <p>Achievements component would go here</p>
-            </div>
+            <BreakStore />
+            <Achievements />
           </div>
         </div>
       </main>
+
+      <CoinAnimation 
+        amount={coinAnimationProps.amount}
+        isVisible={coinAnimationProps.isVisible}
+        timerRef={timerRef}
+        currencyRef={currencyRef}
+      />
+      
+      <BreakModal isOpen={!!activeBreak} />
 
       <footer className="bg-gray-50 border-t border-gray-200 py-4">
         <div className="container mx-auto px-4 text-center text-gray-500 text-sm">
