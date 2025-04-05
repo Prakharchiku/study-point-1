@@ -33,11 +33,17 @@ function DashboardContent() {
             <Plus className="h-8 w-8 mr-2" />
             <h1 className="font-heading font-bold text-xl md:text-2xl">StudyRewards</h1>
           </div>
-          <div ref={currencyRef} className="flex items-center bg-indigo-600 px-3 py-1 rounded-full shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span key={userStats?.currency} className="ml-1 font-bold">{userStats?.currency || 0}</span>
+          <div className="flex gap-2">
+            <div ref={currencyRef} className="flex items-center bg-indigo-600 px-3 py-1 rounded-full shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span key={userStats?.currency} className="ml-1 font-bold">{userStats?.currency || 0}</span>
+            </div>
+            <div className="flex items-center bg-green-600 px-3 py-1 rounded-full shadow-sm">
+              <span className="text-yellow-400">🔥</span>
+              <span className="ml-1 font-bold text-white">{userStats?.streakDays || 0} days</span>
+            </div>
           </div>
         </div>
       </header>
