@@ -260,28 +260,34 @@ export class DatabaseStorage implements IStorage {
   private async initializeDefaultBreaks() {
     const defaultBreaks = [
       { 
-        name: "Quick Break (5 min)", 
-        description: "Perfect for the Pomodoro Technique", 
+        name: "Pomodoro Break (5 min)", 
+        description: "Based on the Pomodoro Technique; keeps your brain fresh and focused after 25 minutes of study", 
         duration: 5, 
         cost: 50
       },
       { 
-        name: "Short Break (10 min)", 
-        description: "Ideal after 25-30 minutes of work", 
+        name: "Focus Break (10 min)", 
+        description: "Helps maintain high mental performance before fatigue kicks in after 50 minutes of study", 
         duration: 10, 
         cost: 100
       },
       { 
-        name: "Medium Break (20 min)", 
-        description: "Great for a proper stretch", 
+        name: "Ultradian Break (20 min)", 
+        description: "Follows the brain's ultradian rhythm, where focus naturally dips after 90 minutes", 
         duration: 20, 
         cost: 200
       },
       { 
-        name: "Long Break (30 min)", 
-        description: "Perfect after completing a major task", 
+        name: "Reset Break (30 min)", 
+        description: "Gives your brain and body time to reset after 2 hours; helps prevent cognitive overload", 
         duration: 30, 
         cost: 300
+      },
+      { 
+        name: "Long Recovery (60 min)", 
+        description: "Extended rest for full recovery after 3-4 hours; perfect for a meal, walk, or power nap", 
+        duration: 60, 
+        cost: 600
       }
     ];
 
