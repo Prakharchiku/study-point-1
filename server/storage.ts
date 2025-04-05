@@ -80,27 +80,27 @@ export class MemStorage implements IStorage {
       },
       { 
         name: "10 Minute Break", 
-        description: "Helps maintain high mental performance before fatigue", 
+        description: "Helps maintain high mental performance before fatigue kicks in", 
         duration: 10, 
         cost: 500  // 50 min study
       },
       { 
         name: "20 Minute Break", 
-        description: "Follows brain's ultradian rhythm cycle of 90 minutes", 
+        description: "Follows the brain's ultradian rhythm, where focus naturally dips after 90 mins", 
         duration: 20, 
         cost: 900  // 90 min study
       },
       { 
         name: "30 Minute Break", 
-        description: "Gives your brain time to reset; prevents cognitive overload", 
+        description: "Gives your brain and body time to reset; helps prevent cognitive overload", 
         duration: 30, 
-        cost: 1200  // 2 hours (120 min) study
+        cost: 1200  // 2 hours study
       },
       { 
         name: "60 Minute Break", 
-        description: "Extended rest for full recovery; time for a meal, walk, or nap", 
+        description: "Extended rest for full recovery; allows for proper meal, walk, or nap", 
         duration: 60, 
-        cost: 2100  // 3.5 hours (210 min) study
+        cost: 2100  // 3.5 hours study
       }
     ];
     
