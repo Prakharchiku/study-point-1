@@ -78,13 +78,6 @@ export default function BreakStore() {
           ))}
         </div>
         
-        <button
-          onClick={() => useStudyContext().grantCoins()}
-          className="mt-4 w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-        >
-          Get 100 Test Coins
-        </button>
-
         <div className="mt-6 bg-indigo-50 rounded-lg p-4">
           <h3 className="font-medium mb-2">Current Break</h3>
           <div className="text-center py-3">
