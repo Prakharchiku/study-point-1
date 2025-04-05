@@ -201,9 +201,16 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }, {
         onSuccess: () => {
           // Update stats with coins earned and increment session count
+          const newCurrency = (userStats?.currency || 0) + coinsEarned;
+          const newTotalSessions = (userStats?.totalSessions || 0) + 1;
+          
           updateStatsMutation.mutate({
-            currency: (userStats?.currency || 0) + coinsEarned,
-            totalSessions: (userStats?.totalSessions || 0) + 1
+            currency: newCurrency,
+            totalSessions: newTotalSessions
+          }, {
+            onSuccess: () => {
+              refetchUserStats();
+            }
           });
         }
       });
@@ -291,20 +298,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
   
-  // Create default user stats if needed
+  // Fetch user stats when component mounts
   useEffect(() => {
-    if (!userStats) {
-      updateStatsMutation.mutate({
-        userId,
-        currency: 0,
-        totalStudyTime: 0,
-        todayStudyTime: 0,
-        totalSessions: 0,
-        breaksTaken: 0,
-        streakDays: 0
-      });
+    if (user?.id) {
+      refetchUserStats();
     }
-  }, [userStats, updateStatsMutation, userId]);
+  }, [user?.id, refetchUserStats]);
   
   const value = {
     timerState,
