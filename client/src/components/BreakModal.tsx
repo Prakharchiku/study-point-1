@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useStudyContext } from "@/context/StudyContext";
 import { formatBreakTime } from "@/lib/utils";
+import BreakTips from "./BreakTips";
 
 interface BreakModalProps {
   isOpen: boolean;
@@ -16,10 +17,16 @@ export default function BreakModal({ isOpen }: BreakModalProps) {
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>
       <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 z-10">
         <h2 className="font-heading font-bold text-2xl mb-3 text-center">Break Time!</h2>
-        <div className="text-5xl font-bold text-center mb-6 font-heading">
+        <div className="text-5xl font-bold text-center mb-4 font-heading">
           {formatBreakTime(breakTimeRemaining)}
         </div>
-        <p className="text-center mb-6">Enjoy your well-earned break!</p>
+        <p className="text-center mb-4">Enjoy your well-earned break!</p>
+        
+        {/* Add Break Tips */}
+        <div className="mb-6">
+          <BreakTips />
+        </div>
+        
         <div className="flex justify-center">
           <Button 
             onClick={endBreak}
