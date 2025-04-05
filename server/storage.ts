@@ -66,9 +66,13 @@ export class MemStorage implements IStorage {
   }
 
 
-  // Break methods
+  // Break methods - disabled for MemStorage
   async getBreaks(): Promise<Break[]> {
     return [];
+  }
+
+  async getBreak(id: number): Promise<Break | undefined> {
+    return undefined;
   }
 
   async createBreak(breakData: InsertBreak): Promise<Break> {
