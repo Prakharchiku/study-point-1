@@ -6,6 +6,9 @@ import {
 } from "@shared/schema";
 
 import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -32,41 +35,30 @@ export interface IStorage {
 }
 
 import createMemoryStore from "memorystore";
-
 const MemoryStore = createMemoryStore(session);
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private studySessions: Map<number, StudySession>;
   private userStats: Map<number, UserStats>;
-  private breaks: Map<number, Break>;
-
   private userId: number;
   private sessionId: number;
   private statsId: number;
-  private breakId: number;
-
   public sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
     this.studySessions = new Map();
     this.userStats = new Map();
-    this.breaks = new Map();
-
     this.userId = 1;
     this.sessionId = 1;
     this.statsId = 1;
-    this.breakId = 1;
-
-    // Create memory store for sessions
     this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
+      checkPeriod: 86400000
     });
   }
 
-
-  // Break methods - disabled for MemStorage
+  // Break methods - completely disabled for MemStorage
   async getBreaks(): Promise<Break[]> {
     return [];
   }
@@ -76,7 +68,7 @@ export class MemStorage implements IStorage {
   }
 
   async createBreak(breakData: InsertBreak): Promise<Break> {
-    throw new Error("MemStorage does not support break creation");
+    throw new Error("Break creation not supported in MemStorage");
   }
 
   // User methods
@@ -123,7 +115,6 @@ export class MemStorage implements IStorage {
   async createUserStats(insertStats: InsertUserStats): Promise<UserStats> {
     const id = this.statsId++;
     const lastStudyDate = new Date();
-    // Set default values for all required fields
     const stats: UserStats = { 
       ...insertStats, 
       id,
@@ -167,82 +158,54 @@ export class MemStorage implements IStorage {
     this.userStats.set(stats.id, updatedUserStats);
     return updatedUserStats;
   }
-
-  // Break methods - disabled for MemStorage
-  async getBreaks(): Promise<Break[]> {
-    return [];
-  }
-
-  async getBreak(id: number): Promise<Break | undefined> {
-    return undefined;
-  }
-
-  async createBreak(insertBreak: InsertBreak): Promise<Break> {
-    throw new Error("Break creation not supported in MemStorage");
-  }
 }
-
-import connectPg from "connect-pg-simple";
-import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
-
-const PostgresSessionStore = connectPg(session);
 
 export class DatabaseStorage implements IStorage {
   public sessionStore: session.Store;
 
   constructor() {
-    // For session store we need a proper pg Pool
-    // Use in-memory session store instead of PostgreSQL
-    // This is a workaround for now
     this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
+      checkPeriod: 86400000
     });
-
-    // Initialize default breaks
     this.initializeDefaultBreaks();
   }
 
   private async initializeDefaultBreaks() {
-    const existingBreaks = await this.getBreaks();
-    if (existingBreaks.length > 0) {
-      return; // Don't initialize if breaks already exist
-    }
+    await db.delete(breaks); // Clear existing breaks first
 
     const defaultBreaks = [
       { 
-        name: "Quick Break (5 min)", 
-        description: "Perfect for the Pomodoro Technique - keeps your brain fresh", 
+        name: "Study Time: 25 minutes", 
+        description: "5-minute break - Based on the Pomodoro Technique; keeps your brain fresh and focused.", 
         duration: 5, 
         cost: 50
       },
       { 
-        name: "Short Break (10 min)", 
-        description: "Ideal after 25-30 minutes of focused work", 
+        name: "Study Time: 50 minutes", 
+        description: "10-minute break - Helps maintain high mental performance before fatigue kicks in.", 
         duration: 10, 
         cost: 100
       },
       { 
-        name: "Medium Break (20 min)", 
-        description: "Great for a proper stretch and mental reset", 
+        name: "Study Time: 90 minutes", 
+        description: "15-20 minute break - Follows the brain's ultradian rhythm, where focus naturally dips.", 
         duration: 20, 
         cost: 200
       },
       { 
-        name: "Long Break (30 min)", 
-        description: "Perfect after completing a major task or 2-hour session", 
+        name: "Study Time: 2 hours", 
+        description: "30-minute break - Gives your brain and body time to reset; helps prevent cognitive overload.", 
         duration: 30, 
         cost: 300
       },
       { 
-        name: "Extended Break (60 min)", 
-        description: "Take a proper rest, have a meal, or power nap", 
+        name: "Study Time: 3-4 hours", 
+        description: "1-hour long break - Extended rest for full recovery; allows for proper meal, walk, or nap.", 
         duration: 60, 
         cost: 600
       }
     ];
 
-    // Add each break
     for (const breakData of defaultBreaks) {
       await this.createBreak(breakData);
     }
@@ -331,5 +294,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use Database Storage instead of MemStorage
 export const storage = new DatabaseStorage();
