@@ -10,6 +10,7 @@ import { formatBreakTime } from "@/lib/utils";
 export default function BreakStore() {
   const { data: breaks = [] } = useQuery({
     queryKey: ['/api/breaks'],
+    queryFn: () => fetch('/api/breaks').then(res => res.json())
   });
   
   const { 

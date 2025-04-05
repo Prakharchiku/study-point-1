@@ -252,6 +252,43 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
+    
+    // Initialize default breaks
+    this.initializeDefaultBreaks();
+  }
+
+  private async initializeDefaultBreaks() {
+    const defaultBreaks = [
+      { 
+        name: "Quick Break (5 min)", 
+        description: "Perfect for the Pomodoro Technique", 
+        duration: 5, 
+        cost: 50
+      },
+      { 
+        name: "Short Break (10 min)", 
+        description: "Ideal after 25-30 minutes of work", 
+        duration: 10, 
+        cost: 100
+      },
+      { 
+        name: "Medium Break (20 min)", 
+        description: "Great for a proper stretch", 
+        duration: 20, 
+        cost: 200
+      },
+      { 
+        name: "Long Break (30 min)", 
+        description: "Perfect after completing a major task", 
+        duration: 30, 
+        cost: 300
+      }
+    ];
+
+    // Add each break
+    for (const breakData of defaultBreaks) {
+      await this.createBreak(breakData);
+    }
   }
 
   // User methods
