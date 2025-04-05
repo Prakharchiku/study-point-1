@@ -187,17 +187,24 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Record session
     const sessionDuration = Math.floor(elapsedTime / 1000); // in seconds
     if (sessionDuration > 0) {
-      const coinsEarned = Math.floor((sessionDuration / 60) * earnRate);
+      const minutes = sessionDuration / 60;
+      const coinsEarned = Math.floor(minutes * earnRate);
       
       createSessionMutation.mutate({
-        userId,
+        userId: user?.id || 0,
         duration: sessionDuration,
         coinsEarned
       });
       
+      // Update stats with coins earned
+      updateStatsMutation.mutate({
+        currency: (userStats?.currency || 0) + coinsEarned,
+        totalSessions: (userStats?.totalSessions || 0) + 1
+      });
+      
       toast({
         title: "Study session completed!",
-        description: `You earned ${coinsEarned} coins for ${Math.floor(sessionDuration / 60)} minutes of study.`
+        description: `You earned ${coinsEarned} coins for ${Math.floor(minutes)} minutes of study.`
       });
     }
     
