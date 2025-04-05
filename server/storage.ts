@@ -73,38 +73,61 @@ export class MemStorage implements IStorage {
     // With earnRate of 10 coins per minute
     const defaultBreaks: InsertBreak[] = [
       { 
-        name: "5 Minute Break", 
-        description: "Based on Pomodoro Technique; keeps your brain fresh and focused", 
+        id: 1,
+        name: "Quick Break (5 min)", 
+        description: "Perfect for the Pomodoro Technique - keeps your brain fresh", 
         duration: 5, 
-        cost: 250  // 25 min study
+        cost: 50  // 5 min study
       },
       { 
-        name: "10 Minute Break", 
-        description: "Helps maintain high mental performance before fatigue kicks in", 
+        id: 2,
+        name: "Short Break (10 min)", 
+        description: "Ideal after 25-30 minutes of focused work", 
         duration: 10, 
-        cost: 500  // 50 min study
+        cost: 100  // 10 min study
       },
       { 
-        name: "20 Minute Break", 
-        description: "Follows the brain's ultradian rhythm, where focus naturally dips after 90 mins", 
+        id: 3,
+        name: "Medium Break (20 min)", 
+        description: "Great for a proper stretch and mental reset", 
         duration: 20, 
-        cost: 900  // 90 min study
+        cost: 200  // 20 min study
       },
       { 
-        name: "30 Minute Break", 
-        description: "Gives your brain and body time to reset; helps prevent cognitive overload", 
+        id: 4,
+        name: "Long Break (30 min)", 
+        description: "Perfect after completing a major task or 2-hour session", 
         duration: 30, 
-        cost: 1200  // 2 hours study
+        cost: 300  // 30 min study
       },
       { 
-        name: "60 Minute Break", 
-        description: "Extended rest for full recovery; allows for proper meal, walk, or nap", 
+        id: 5,
+        name: "Extended Break (60 min)", 
+        description: "Take a proper rest, have a meal, or power nap", 
         duration: 60, 
-        cost: 2100  // 3.5 hours study
+        cost: 600  // 60 min study
       }
     ];
     
-    defaultBreaks.forEach(breakItem => this.createBreak(breakItem));
+    // Clear existing breaks
+    this.breaks.clear();
+    
+    // Add new breaks
+    defaultBreaks.forEach(breakItem => {
+      this.breaks.set(breakItem.id, breakItem);
+    });
+  }
+
+  // Break methods
+  async getBreaks(): Promise<Break[]> {
+    return Array.from(this.breaks.values());
+  }
+
+  async createBreak(breakData: InsertBreak): Promise<Break> {
+    const id = breakData.id || this.breaks.size + 1;
+    const newBreak = { ...breakData, id };
+    this.breaks.set(id, newBreak);
+    return newBreak;
   }
 
   // User methods

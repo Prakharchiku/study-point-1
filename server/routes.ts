@@ -8,7 +8,7 @@ import { setupAuth } from "./auth";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes and middleware
   setupAuth(app);
-  
+
   // Auth middleware for protected routes
   const ensureAuthenticated = (req: Request, res: any, next: any) => {
     if (req.isAuthenticated()) {
@@ -16,6 +16,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     res.status(401).json({ message: "Authentication required" });
   };
+
   // Get all break options
   app.get("/api/breaks", async (req, res) => {
     try {
@@ -35,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let stats = await storage.getUserStats(userId);
-      
+
       if (!stats) {
         // Create default stats for user if they don't exist
         stats = await storage.createUserStats({
@@ -50,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           experience: 0
         });
       }
-      
+
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve user statistics" });
@@ -64,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(userId)) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
-      
+
       const sessions = await storage.getStudySessions(userId);
       res.json(sessions);
     } catch (error) {
@@ -77,13 +78,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // XP required for each level: level * 1000
     let totalExp = currentExp + newExp;
     let level = currentLevel;
-    
+
     // Check if user levels up
     while (totalExp >= level * 1000) {
       totalExp -= level * 1000;
       level += 1;
     }
-    
+
     return { level, experience: totalExp };
   };
 
@@ -96,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user stats
       const userId = sessionData.userId;
       let stats = await storage.getUserStats(userId);
-      
+
       // Calculate experience gained (1 exp per second of study)
       const expGained = sessionData.duration;
       const { level, experience } = calculateLevelAndExp(
@@ -104,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stats?.experience || 0,
         expGained
       );
-      
+
       const updatedStats = {
         totalStudyTime: (stats?.totalStudyTime || 0) + sessionData.duration,
         todayStudyTime: (stats?.todayStudyTime || 0) + sessionData.duration,
@@ -113,9 +114,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         level,
         experience
       };
-      
+
       await storage.updateUserStats(userId, updatedStats);
-      
+
       res.status(201).json(session);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -132,11 +133,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(userId)) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
-      
+
       // Validate only the fields that are being updated
       const updateSchema = insertUserStatsSchema.partial();
       const updateData = updateSchema.parse(req.body);
-      
+
       const stats = await storage.updateUserStats(userId, updateData);
       res.json(stats);
     } catch (error) {
