@@ -164,20 +164,17 @@ export class MemStorage implements IStorage {
     return updatedUserStats;
   }
 
-  // Break methods
+  // Break methods - disabled for MemStorage
   async getBreaks(): Promise<Break[]> {
-    return Array.from(this.breaks.values());
+    return [];
   }
 
   async getBreak(id: number): Promise<Break | undefined> {
-    return this.breaks.get(id);
+    return undefined;
   }
 
   async createBreak(insertBreak: InsertBreak): Promise<Break> {
-    const id = this.breakId++;
-    const breakItem: Break = { ...insertBreak, id };
-    this.breaks.set(id, breakItem);
-    return breakItem;
+    throw new Error("Break creation not supported in MemStorage");
   }
 }
 
@@ -203,34 +200,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async initializeDefaultBreaks() {
+    const existingBreaks = await this.getBreaks();
+    if (existingBreaks.length > 0) {
+      return; // Don't initialize if breaks already exist
+    }
+
     const defaultBreaks = [
       { 
-        name: "Pomodoro Break (5 min)", 
-        description: "Based on the Pomodoro Technique; keeps your brain fresh and focused after 25 minutes of study", 
+        name: "Quick Break (5 min)", 
+        description: "Perfect for the Pomodoro Technique - keeps your brain fresh", 
         duration: 5, 
         cost: 50
       },
       { 
-        name: "Focus Break (10 min)", 
-        description: "Helps maintain high mental performance before fatigue kicks in after 50 minutes of study", 
+        name: "Short Break (10 min)", 
+        description: "Ideal after 25-30 minutes of focused work", 
         duration: 10, 
         cost: 100
       },
       { 
-        name: "Ultradian Break (20 min)", 
-        description: "Follows the brain's ultradian rhythm, where focus naturally dips after 90 minutes", 
+        name: "Medium Break (20 min)", 
+        description: "Great for a proper stretch and mental reset", 
         duration: 20, 
         cost: 200
       },
       { 
-        name: "Reset Break (30 min)", 
-        description: "Gives your brain and body time to reset after 2 hours; helps prevent cognitive overload", 
+        name: "Long Break (30 min)", 
+        description: "Perfect after completing a major task or 2-hour session", 
         duration: 30, 
         cost: 300
       },
       { 
-        name: "Long Recovery (60 min)", 
-        description: "Extended rest for full recovery after 3-4 hours; perfect for a meal, walk, or power nap", 
+        name: "Extended Break (60 min)", 
+        description: "Take a proper rest, have a meal, or power nap", 
         duration: 60, 
         cost: 600
       }
