@@ -51,16 +51,17 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    app.use(express.static(path.resolve(import.meta.dirname, "../dist/public")));
+    // Serve static files from the built frontend
+    app.use(express.static(path.join(import.meta.dirname, "../dist/public")));
+    
+    // Handle client-side routing
     app.get("*", (_req, res) => {
-      res.sendFile(path.resolve(import.meta.dirname, "../dist/public/index.html"));
+      res.sendFile(path.join(import.meta.dirname, "../dist/public/index.html"));
     });
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Use process.env.PORT for production compatibility, fallback to 5000 for development
+  const port = process.env.PORT || 5000;
   server.listen({
     port,
     host: "0.0.0.0",
