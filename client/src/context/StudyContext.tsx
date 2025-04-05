@@ -138,6 +138,11 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (currentMinutes > lastCoinUpdate) {
         const coinsToAdd = earnRate * (currentMinutes - lastCoinUpdate);
         
+        // Update backend with new coins
+        updateStatsMutation.mutate({
+          currency: (userStats?.currency || 0) + coinsToAdd
+        });
+
         // Trigger coin animation
         setCoinAnimationProps({
           amount: coinsToAdd,

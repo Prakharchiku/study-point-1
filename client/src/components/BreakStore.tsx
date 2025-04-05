@@ -18,10 +18,6 @@ export default function BreakStore() {
   
   const { toast } = useToast();
   
-  const { data: breaks = [] } = useQuery({
-    queryKey: ['/api/breaks'],
-  });
-  
   const handlePurchaseBreak = (breakOption: any) => {
     if (!userStats || userStats.currency < breakOption.cost) {
       toast({
@@ -58,7 +54,7 @@ export default function BreakStore() {
         <p className="text-gray-600 mb-4">Use your earned coins to purchase breaks!</p>
         
         <div className="space-y-4">
-          {breaks.map((breakOption) => (
+          {breakOptions.map((breakOption) => (
             <div 
               key={breakOption.id}
               className="bg-gray-50 rounded-lg p-4 flex justify-between items-center transition-all hover:bg-gray-100"
