@@ -59,9 +59,6 @@ export class MemStorage implements IStorage {
     this.statsId = 1;
     this.breakId = 1;
     
-    // Initialize with default break options
-    this.initializeBreaks();
-    
     // Create memory store for sessions
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
@@ -70,42 +67,41 @@ export class MemStorage implements IStorage {
 
   private initializeBreaks() {
     // Based on scientifically supported study-to-break ratios
-    // With earnRate of 10 coins per minute
     const defaultBreaks: InsertBreak[] = [
       { 
         id: 1,
-        name: "Quick Break (5 min)", 
-        description: "Perfect for the Pomodoro Technique - keeps your brain fresh", 
+        name: "Pomodoro Break (5 min)", 
+        description: "Based on the Pomodoro Technique; keeps your brain fresh and focused after 25 minutes of study", 
         duration: 5, 
-        cost: 50  // 5 min study
+        cost: 50
       },
       { 
         id: 2,
-        name: "Short Break (10 min)", 
-        description: "Ideal after 25-30 minutes of focused work", 
+        name: "Focus Break (10 min)", 
+        description: "Helps maintain high mental performance before fatigue kicks in after 50 minutes of study", 
         duration: 10, 
-        cost: 100  // 10 min study
+        cost: 100
       },
       { 
         id: 3,
-        name: "Medium Break (20 min)", 
-        description: "Great for a proper stretch and mental reset", 
+        name: "Ultradian Break (20 min)", 
+        description: "Follows the brain's ultradian rhythm, where focus naturally dips after 90 minutes", 
         duration: 20, 
-        cost: 200  // 20 min study
+        cost: 200
       },
       { 
         id: 4,
-        name: "Long Break (30 min)", 
-        description: "Perfect after completing a major task or 2-hour session", 
+        name: "Reset Break (30 min)", 
+        description: "Gives your brain and body time to reset after 2 hours; helps prevent cognitive overload", 
         duration: 30, 
-        cost: 300  // 30 min study
+        cost: 300
       },
       { 
         id: 5,
-        name: "Extended Break (60 min)", 
-        description: "Take a proper rest, have a meal, or power nap", 
+        name: "Long Recovery (60 min)", 
+        description: "Extended rest for full recovery after 3-4 hours; perfect for a meal, walk, or power nap", 
         duration: 60, 
-        cost: 600  // 60 min study
+        cost: 600
       }
     ];
     
