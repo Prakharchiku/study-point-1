@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
@@ -24,12 +25,7 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
   
-  // If user is already logged in, redirect to the dashboard
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
-  // Login form
+  // Initialize forms regardless of user state
   const loginForm = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
     defaultValues: {
@@ -38,7 +34,6 @@ export default function AuthPage() {
     },
   });
 
-  // Register form
   const registerForm = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
     defaultValues: {
@@ -55,6 +50,11 @@ export default function AuthPage() {
   // Handle register form submission
   function onRegisterSubmit(data: AuthFormValues) {
     registerMutation.mutate(data);
+  }
+
+  // Check for authenticated user after hooks are initialized
+  if (user) {
+    return <Redirect to="/" />;
   }
 
   return (
