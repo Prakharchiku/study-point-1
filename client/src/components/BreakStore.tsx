@@ -49,9 +49,15 @@ export default function BreakStore() {
       <CardContent className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-heading font-bold text-xl">Break Store</h2>
-          <div className="flex items-center bg-indigo-100 px-3 py-1 rounded-full">
-            <Coins className="h-5 w-5 text-yellow-500" />
-            <span className="ml-1 font-bold">{userStats?.currency || 0}</span>
+          <div className="flex gap-2">
+            <div className="flex items-center bg-indigo-100 px-3 py-1 rounded-full">
+              <Coins className="h-5 w-5 text-yellow-500" />
+              <span className="ml-1 font-bold">{userStats?.currency || 0}</span>
+            </div>
+            <div className="flex items-center bg-green-100 px-3 py-1 rounded-full">
+              <span className="text-green-600">🔥</span>
+              <span className="ml-1 font-bold">{userStats?.streakDays || 0} days</span>
+            </div>
           </div>
         </div>
         
