@@ -5,6 +5,8 @@ import {
   breaks, type Break, type InsertBreak
 } from "@shared/schema";
 
+import session from "express-session";
+
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -24,7 +26,14 @@ export interface IStorage {
   getBreaks(): Promise<Break[]>;
   getBreak(id: number): Promise<Break | undefined>;
   createBreak(breakItem: InsertBreak): Promise<Break>;
+  
+  // Session store
+  sessionStore: session.Store;
 }
+
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
@@ -36,6 +45,8 @@ export class MemStorage implements IStorage {
   private sessionId: number;
   private statsId: number;
   private breakId: number;
+  
+  public sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
@@ -50,6 +61,11 @@ export class MemStorage implements IStorage {
     
     // Initialize with default break options
     this.initializeBreaks();
+    
+    // Create memory store for sessions
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
   }
 
   private initializeBreaks() {
@@ -104,7 +120,8 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id };
+    const createdAt = new Date();
+    const user: User = { ...insertUser, id, createdAt };
     this.users.set(id, user);
     return user;
   }
@@ -133,6 +150,7 @@ export class MemStorage implements IStorage {
   
   async createUserStats(insertStats: InsertUserStats): Promise<UserStats> {
     const id = this.statsId++;
+    const lastStudyDate = new Date();
     // Set default values for all required fields
     const stats: UserStats = { 
       ...insertStats, 
@@ -143,6 +161,7 @@ export class MemStorage implements IStorage {
       totalSessions: insertStats.totalSessions ?? 0,
       breaksTaken: insertStats.breaksTaken ?? 0,
       streakDays: insertStats.streakDays ?? 0,
+      lastStudyDate: insertStats.lastStudyDate ?? lastStudyDate,
       level: insertStats.level ?? 1,
       experience: insertStats.experience ?? 0
     };
@@ -161,7 +180,10 @@ export class MemStorage implements IStorage {
         todayStudyTime: 0, 
         totalSessions: 0, 
         breaksTaken: 0, 
-        streakDays: 0 
+        streakDays: 0,
+        lastStudyDate: new Date(),
+        level: 1,
+        experience: 0
       });
     }
     
@@ -191,4 +213,108 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import connectPg from "connect-pg-simple";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
+
+const PostgresSessionStore = connectPg(session);
+
+export class DatabaseStorage implements IStorage {
+  public sessionStore: session.Store;
+
+  constructor() {
+    const pool = {
+      connectionString: process.env.DATABASE_URL,
+    };
+    
+    this.sessionStore = new PostgresSessionStore({ 
+      pool: pool as any, // type workaround
+      createTableIfMissing: true 
+    });
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  // Study sessions methods
+  async getStudySessions(userId: number): Promise<StudySession[]> {
+    return await db.select()
+      .from(studySessions)
+      .where(eq(studySessions.userId, userId))
+      .orderBy(desc(studySessions.date));
+  }
+
+  async createStudySession(insertSession: InsertStudySession): Promise<StudySession> {
+    const [session] = await db.insert(studySessions).values(insertSession).returning();
+    return session;
+  }
+
+  // User stats methods
+  async getUserStats(userId: number): Promise<UserStats | undefined> {
+    const [stats] = await db.select().from(userStats).where(eq(userStats.userId, userId));
+    return stats;
+  }
+
+  async createUserStats(insertStats: InsertUserStats): Promise<UserStats> {
+    const [stats] = await db.insert(userStats).values(insertStats).returning();
+    return stats;
+  }
+
+  async updateUserStats(userId: number, updatedStats: Partial<InsertUserStats>): Promise<UserStats> {
+    let stats = await this.getUserStats(userId);
+    
+    if (!stats) {
+      stats = await this.createUserStats({ 
+        userId, 
+        currency: 0, 
+        totalStudyTime: 0, 
+        todayStudyTime: 0, 
+        totalSessions: 0, 
+        breaksTaken: 0, 
+        streakDays: 0,
+        lastStudyDate: new Date(),
+        level: 1,
+        experience: 0
+      });
+    }
+    
+    const [updatedUserStats] = await db
+      .update(userStats)
+      .set(updatedStats)
+      .where(eq(userStats.id, stats.id))
+      .returning();
+      
+    return updatedUserStats;
+  }
+
+  // Break methods
+  async getBreaks(): Promise<Break[]> {
+    return await db.select().from(breaks);
+  }
+
+  async getBreak(id: number): Promise<Break | undefined> {
+    const [breakItem] = await db.select().from(breaks).where(eq(breaks.id, id));
+    return breakItem;
+  }
+
+  async createBreak(insertBreak: InsertBreak): Promise<Break> {
+    const [breakItem] = await db.insert(breaks).values(insertBreak).returning();
+    return breakItem;
+  }
+}
+
+// Use Database Storage instead of MemStorage
+export const storage = new DatabaseStorage();

@@ -1,10 +1,21 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertStudySessionSchema, insertUserStatsSchema } from "@shared/schema";
+import { insertStudySessionSchema, insertUserStatsSchema, User } from "@shared/schema";
 import { z } from "zod";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication routes and middleware
+  setupAuth(app);
+  
+  // Auth middleware for protected routes
+  const ensureAuthenticated = (req: Request, res: any, next: any) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.status(401).json({ message: "Authentication required" });
+  };
   // Get all break options
   app.get("/api/breaks", async (req, res) => {
     try {
@@ -16,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user stats
-  app.get("/api/stats/:userId", async (req, res) => {
+  app.get("/api/stats/:userId", ensureAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       if (isNaN(userId)) {
@@ -47,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user study sessions
-  app.get("/api/sessions/:userId", async (req, res) => {
+  app.get("/api/sessions/:userId", ensureAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       if (isNaN(userId)) {
@@ -77,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Create a new study session
-  app.post("/api/sessions", async (req, res) => {
+  app.post("/api/sessions", ensureAuthenticated, async (req, res) => {
     try {
       const sessionData = insertStudySessionSchema.parse(req.body);
       const session = await storage.createStudySession(sessionData);
@@ -115,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user stats (for purchasing breaks)
-  app.patch("/api/stats/:userId", async (req, res) => {
+  app.patch("/api/stats/:userId", ensureAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       if (isNaN(userId)) {
