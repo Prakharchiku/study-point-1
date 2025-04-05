@@ -17,14 +17,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(401).json({ message: "Authentication required" });
   };
 
-  // Get all break options
-  app.get("/api/breaks", async (req, res) => {
-    try {
-      const breaks = await storage.getBreaks();
-      res.json(breaks);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to retrieve break options" });
-    }
+  // Get all available breaks
+  app.get('/api/breaks', async (req, res) => {
+    const breaks = await storage.getBreaks();
+    res.json(breaks);
   });
 
   // Get user stats

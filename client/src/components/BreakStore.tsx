@@ -8,9 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import { formatBreakTime } from "@/lib/utils";
 
 export default function BreakStore() {
+  const { data: breaks = [] } = useQuery({
+    queryKey: ['/api/breaks'],
+  });
+  
   const { 
     userStats, 
-    breakOptions, 
     purchaseBreak, 
     activeBreak, 
     breakTimeRemaining 
@@ -54,7 +57,7 @@ export default function BreakStore() {
         <p className="text-gray-600 mb-4">Use your earned coins to purchase breaks!</p>
         
         <div className="space-y-4">
-          {breakOptions.map((breakOption) => (
+          {breaks.map((breakOption) => (
             <div 
               key={breakOption.id}
               className="bg-gray-50 rounded-lg p-4 flex justify-between items-center transition-all hover:bg-gray-100"
