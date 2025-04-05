@@ -139,15 +139,15 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const currentMinutes = Math.floor(elapsed / 60000);
       if (currentMinutes > lastCoinUpdate) {
         const coinsToAdd = earnRate * (currentMinutes - lastCoinUpdate);
-        const newTotal = (userStats?.currency || 0) + coinsToAdd;
         
-        // Update backend with new coins
-        updateStatsMutation.mutate({
-          currency: newTotal,
-          totalSessions: userStats?.totalSessions || 0
+        // Create a study session for each minute to ensure coins are persisted
+        createSessionMutation.mutate({
+          userId: user?.id || 0,
+          duration: 60, // one minute in seconds
+          coinsEarned: earnRate
         }, {
           onSuccess: () => {
-            // Trigger coin animation only after backend update succeeds
+            // Trigger coin animation
             setCoinAnimationProps({
               amount: coinsToAdd,
               isVisible: true
@@ -162,6 +162,8 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }, 3000);
             
             setLastCoinUpdate(currentMinutes);
+            // Refetch stats to get updated coin count
+            refetchUserStats();
           }
         });
       }
