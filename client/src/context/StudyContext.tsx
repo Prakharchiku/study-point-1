@@ -69,9 +69,10 @@ export function StudyProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
   // Fetch user stats
-  const { data: userStats = null, refetch: refetchUserStats } = useQuery<any>({
+  const userStatsQueryData = useQuery<any>({
     queryKey: [`/api/stats/${userId}`],
   });
+  const { data: userStats = null, refetch: refetchUserStats } = userStatsQueryData;
   
   // Fetch study sessions
   const { data: fetchedSessions = [] } = useQuery({
@@ -140,6 +141,9 @@ export function StudyProvider({ children }: { children: ReactNode }) {
           
           console.log(`Awarding coins for minute ${currentMinutes}. Coins to add: ${coinsToAdd}`);
           
+          // Update lastCoinUpdate immediately to prevent duplicate awards
+          setLastCoinUpdate(currentMinutes);
+          
           // Create a study session for each minute to ensure coins are persisted
           createSessionMutation.mutate({
             userId: user?.id || 0,
@@ -162,14 +166,26 @@ export function StudyProvider({ children }: { children: ReactNode }) {
                 }));
               }, 3000);
               
-              setLastCoinUpdate(currentMinutes);
               // Refetch stats to get updated coin count
               refetchUserStats();
             },
             onError: (error) => {
               console.error("Failed to create session:", error);
-              // Even if animation fails, ensure user gets the coins by updating lastCoinUpdate
-              setLastCoinUpdate(currentMinutes);
+              
+              // If session creation fails, try direct stats update as fallback
+              if (userStats) {
+                console.log("Attempting direct stats update as fallback...");
+                const newCurrency = (userStats.currency || 0) + coinsToAdd;
+                updateStatsMutation.mutate({
+                  currency: newCurrency
+                });
+                
+                // Also update the local cache immediately
+                queryClient.setQueryData([`/api/stats/${userId}`], {
+                  ...userStats,
+                  currency: newCurrency
+                });
+              }
             }
           });
         }
@@ -178,7 +194,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       }
     }, 100);
     
-  }, [timerState, elapsedTime, lastCoinUpdate, earnRate, user, createSessionMutation, refetchUserStats]);
+  }, [timerState, elapsedTime, lastCoinUpdate, earnRate, user, createSessionMutation, refetchUserStats, queryClient, userId]);
   
   const pauseTimer = React.useCallback(() => {
     if (timerState !== 'running') return;
@@ -208,6 +224,23 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         
         console.log(`Stopping timer. Session duration: ${sessionDuration}s, Coins earned: ${coinsEarned}`);
         
+        // Update directly first to ensure UI updates immediately
+        if (userStats) {
+          const newCurrency = (userStats.currency || 0) + coinsEarned;
+          const newTotalSessions = (userStats.totalSessions || 0) + 1;
+          
+          // Update UI immediately without waiting for API
+          const updatedStats = {
+            ...userStats,
+            currency: newCurrency,
+            totalSessions: newTotalSessions
+          };
+          
+          // Force an immediate state update for the stats
+          queryClient.setQueryData([`/api/stats/${userId}`], updatedStats);
+        }
+        
+        // Now record the session in the database
         createSessionMutation.mutate({
           userId: user?.id || 0,
           duration: sessionDuration,
@@ -235,11 +268,22 @@ export function StudyProvider({ children }: { children: ReactNode }) {
           onError: (error) => {
             console.error("Failed to create final session:", error);
             
-            // Even if session creation fails, try to update stats
+            // Direct stats update as fallback
             if (userStats) {
+              console.log("Attempting direct stats update as fallback...");
               const newCurrency = (userStats.currency || 0) + coinsEarned;
+              const newTotalSessions = (userStats.totalSessions || 0) + 1;
+              
               updateStatsMutation.mutate({
                 currency: newCurrency,
+                totalSessions: newTotalSessions
+              });
+              
+              // Also update the local cache immediately again to ensure UI is in sync
+              queryClient.setQueryData([`/api/stats/${userId}`], {
+                ...userStats,
+                currency: newCurrency,
+                totalSessions: newTotalSessions
               });
             }
           }
@@ -264,7 +308,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       setFocusProgressPercent(0);
       startTimeRef.current = null;
     }
-  }, [timerState, elapsedTime, earnRate, createSessionMutation, toast, user, userStats, updateStatsMutation, refetchUserStats]);
+  }, [timerState, elapsedTime, earnRate, createSessionMutation, toast, user, userStats, updateStatsMutation, refetchUserStats, queryClient, userId]);
   
   const updateFocusProgress = React.useCallback(() => {
     // Update progress bar (resets every minute)

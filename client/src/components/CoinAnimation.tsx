@@ -25,79 +25,79 @@ export default function CoinAnimation({ amount, isVisible, timerRef, currencyRef
     if (!isVisible || amount <= 0) return;
     
     try {
-      // Get positions for animation
+      // Default positions (center of screen) as fallback
       let startX = window.innerWidth / 2;
       let startY = window.innerHeight / 3;
       let endX = window.innerWidth / 2;
       let endY = window.innerHeight / 2;
       
       // Try to get actual element positions if available
-      if (timerRef.current) {
-        const timerRect = timerRef.current.getBoundingClientRect();
-        startX = timerRect.left + timerRect.width / 2;
-        startY = timerRect.top + timerRect.height / 2;
+      try {
+        if (timerRef.current) {
+          const timerRect = timerRef.current.getBoundingClientRect();
+          startX = timerRect.left + timerRect.width / 2;
+          startY = timerRect.top + timerRect.height / 2;
+        }
+        
+        if (currencyRef.current) {
+          const currencyRect = currencyRef.current.getBoundingClientRect();
+          endX = currencyRect.left + currencyRect.width / 2;
+          endY = currencyRect.top + currencyRect.height / 2;
+        }
+      } catch (posError) {
+        console.warn("Using default positions due to element reference error:", posError);
+        // Continue with default positions
       }
       
-      if (currencyRef.current) {
-        const currencyRect = currencyRef.current.getBoundingClientRect();
-        endX = currencyRect.left + currencyRect.width / 2;
-        endY = currencyRect.top + currencyRect.height / 2;
-      }
-      
-      const newCoins: Coin[] = [];
+      // Limit number of coins to animate
       const maxCoins = Math.min(amount, 5);
-      
       console.log(`Animating ${maxCoins} coins from (${startX}, ${startY}) to (${endX}, ${endY})`);
       
+      // Create all coins at once with a simpler approach
+      const newCoins: Coin[] = [];
+      
       for (let i = 0; i < maxCoins; i++) {
-        setTimeout(() => {
-          const coinId = `coin-${Date.now()}-${i}`;
-          
-          // Random starting position near the timer
-          const randomOffsetX = Math.random() * 100 - 50;
-          const randomOffsetY = Math.random() * 20 - 10;
-          const coinStartX = startX + randomOffsetX;
-          const coinStartY = startY + randomOffsetY;
-          
-          // Add coin with initial position
-          newCoins.push({
-            id: coinId,
-            style: {
-              left: `${coinStartX}px`,
-              top: `${coinStartY}px`,
-              opacity: '1',
-              transform: 'scale(1)'
-            }
-          });
-          
-          setCoins(prev => [...prev, ...newCoins]);
-          
-          // Animate to currency display after a short delay
-          setTimeout(() => {
-            setCoins(prev => 
-              prev.map(coin => {
-                if (coin.id === coinId) {
-                  return {
-                    ...coin,
-                    style: {
-                      left: `${endX}px`,
-                      top: `${endY}px`,
-                      opacity: '0',
-                      transform: 'scale(0.5)'
-                    }
-                  };
-                }
-                return coin;
-              })
-            );
-            
-            // Remove coin after animation completes
-            setTimeout(() => {
-              setCoins(prev => prev.filter(coin => coin.id !== coinId));
-            }, 1000);
-          }, 10);
-        }, i * 200);
+        // Create unique ID for each coin
+        const coinId = `coin-${Date.now()}-${i}`;
+        
+        // Add slight randomization to starting position
+        const offsetX = (Math.random() * 60) - 30; // -30 to +30
+        const offsetY = (Math.random() * 20) - 10; // -10 to +10
+        
+        newCoins.push({
+          id: coinId,
+          style: {
+            left: `${startX + offsetX}px`,
+            top: `${startY + offsetY}px`,
+            opacity: '1',
+            transform: 'scale(1)'
+          }
+        });
       }
+      
+      // Add all coins at once
+      setCoins(newCoins);
+      
+      // Animate all coins to destination after a short delay
+      setTimeout(() => {
+        setCoins(prev => 
+          prev.map(coin => ({
+            ...coin,
+            style: {
+              left: `${endX}px`,
+              top: `${endY}px`,
+              opacity: '0',
+              transform: 'scale(0.5)'
+            }
+          }))
+        );
+        
+        // Clear all coins after animation completes
+        setTimeout(() => {
+          setCoins([]);
+        }, 1000);
+      }, 500);
+      
     } catch (error) {
       console.error("Error in coin animation:", error);
       // Clear any existing coins to prevent stale animations
