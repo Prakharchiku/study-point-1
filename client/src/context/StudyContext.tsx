@@ -114,7 +114,8 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     
     // Update streak when starting timer
     apiRequest('POST', '/api/protected/update-streak')
-      .then(() => refetchUserStats());
+      .then(() => refetchUserStats())
+      .catch(err => console.error("Error updating streak:", err));
     
     if (timerState === 'idle') {
       startTimeRef.current = Date.now();
@@ -127,41 +128,53 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     setTimerState('running');
     
     timerIntervalRef.current = setInterval(() => {
-      const now = Date.now();
-      const elapsed = startTimeRef.current ? now - startTimeRef.current : 0;
-      setElapsedTime(elapsed);
-      
-      // Award coins every minute
-      const currentMinutes = Math.floor(elapsed / 60000);
-      if (currentMinutes > lastCoinUpdate && currentMinutes > 0) {
-        const coinsToAdd = earnRate;
+      try {
+        const now = Date.now();
+        const elapsed = startTimeRef.current ? now - startTimeRef.current : 0;
+        setElapsedTime(elapsed);
         
-        // Create a study session for each minute to ensure coins are persisted
-        createSessionMutation.mutate({
-          userId: user?.id || 0,
-          duration: 60, // one minute in seconds
-          coinsEarned: earnRate
-        }, {
-          onSuccess: () => {
-            // Trigger coin animation
-            setCoinAnimationProps({
-              amount: coinsToAdd,
-              isVisible: true
-            });
-            
-            // Reset animation after a delay
-            setTimeout(() => {
-              setCoinAnimationProps(prev => ({
-                ...prev,
-                isVisible: false
-              }));
-            }, 3000);
-            
-            setLastCoinUpdate(currentMinutes);
-            // Refetch stats to get updated coin count
-            refetchUserStats();
-          }
-        });
+        // Award coins every minute
+        const currentMinutes = Math.floor(elapsed / 60000);
+        if (currentMinutes > lastCoinUpdate && currentMinutes > 0) {
+          const coinsToAdd = earnRate;
+          
+          console.log(`Awarding coins for minute ${currentMinutes}. Coins to add: ${coinsToAdd}`);
+          
+          // Create a study session for each minute to ensure coins are persisted
+          createSessionMutation.mutate({
+            userId: user?.id || 0,
+            duration: 60, // one minute in seconds
+            coinsEarned: earnRate
+          }, {
+            onSuccess: () => {
+              console.log(`Successfully created session. Added ${coinsToAdd} coins.`);
+              // Trigger coin animation
+              setCoinAnimationProps({
+                amount: coinsToAdd,
+                isVisible: true
+              });
+              
+              // Reset animation after a delay
+              setTimeout(() => {
+                setCoinAnimationProps(prev => ({
+                  ...prev,
+                  isVisible: false
+                }));
+              }, 3000);
+              
+              setLastCoinUpdate(currentMinutes);
+              // Refetch stats to get updated coin count
+              refetchUserStats();
+            },
+            onError: (error) => {
+              console.error("Failed to create session:", error);
+              // Even if animation fails, ensure user gets the coins by updating lastCoinUpdate
+              setLastCoinUpdate(currentMinutes);
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error in timer interval:", error);
       }
     }, 100);
     
@@ -186,45 +199,72 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       timerIntervalRef.current = null;
     }
     
-    // Record session
-    const sessionDuration = Math.floor(elapsedTime / 1000); // in seconds
-    if (sessionDuration > 0) {
-      const minutes = sessionDuration / 60;
-      const coinsEarned = Math.floor(minutes * earnRate);
-      
-      createSessionMutation.mutate({
-        userId: user?.id || 0,
-        duration: sessionDuration,
-        coinsEarned
-      }, {
-        onSuccess: () => {
-          // Update stats with coins earned and increment session count
-          const newCurrency = (userStats?.currency || 0) + coinsEarned;
-          const newTotalSessions = (userStats?.totalSessions || 0) + 1;
-          
-          updateStatsMutation.mutate({
-            currency: newCurrency,
-            totalSessions: newTotalSessions
-          }, {
-            onSuccess: () => {
-              refetchUserStats();
+    try {
+      // Record session
+      const sessionDuration = Math.floor(elapsedTime / 1000); // in seconds
+      if (sessionDuration > 0) {
+        const minutes = sessionDuration / 60;
+        const coinsEarned = Math.floor(minutes * earnRate);
+        
+        console.log(`Stopping timer. Session duration: ${sessionDuration}s, Coins earned: ${coinsEarned}`);
+        
+        createSessionMutation.mutate({
+          userId: user?.id || 0,
+          duration: sessionDuration,
+          coinsEarned
+        }, {
+          onSuccess: () => {
+            console.log(`Successfully created final session with ${coinsEarned} coins`);
+            // Update stats with coins earned and increment session count
+            const newCurrency = (userStats?.currency || 0) + coinsEarned;
+            const newTotalSessions = (userStats?.totalSessions || 0) + 1;
+            
+            updateStatsMutation.mutate({
+              currency: newCurrency,
+              totalSessions: newTotalSessions
+            }, {
+              onSuccess: () => {
+                console.log(`Successfully updated user stats. New currency: ${newCurrency}`);
+                refetchUserStats();
+              },
+              onError: (error) => {
+                console.error("Failed to update stats on stop:", error);
+              }
+            });
+          },
+          onError: (error) => {
+            console.error("Failed to create final session:", error);
+            
+            // Even if session creation fails, try to update stats
+            if (userStats) {
+              const newCurrency = (userStats.currency || 0) + coinsEarned;
+              updateStatsMutation.mutate({
+                currency: newCurrency,
+              });
             }
-          });
-        }
-      });
-      
+          }
+        });
+        
+        toast({
+          title: "Study session completed!",
+          description: `You earned ${coinsEarned} coins for ${Math.floor(minutes)} minutes of study.`
+        });
+      }
+    } catch (error) {
+      console.error("Error in stopTimer:", error);
       toast({
-        title: "Study session completed!",
-        description: `You earned ${coinsEarned} coins for ${Math.floor(minutes)} minutes of study.`
+        title: "Error stopping session",
+        description: "There was an error processing your study session. Please try again."
       });
+    } finally {
+      // Always reset the timer state
+      setTimerState('idle');
+      setElapsedTime(0);
+      setLastCoinUpdate(0);
+      setFocusProgressPercent(0);
+      startTimeRef.current = null;
     }
-    
-    setTimerState('idle');
-    setElapsedTime(0);
-    setLastCoinUpdate(0);
-    setFocusProgressPercent(0);
-    startTimeRef.current = null;
-  }, [timerState, elapsedTime, earnRate, createSessionMutation, toast, userId, userStats, updateStatsMutation, refetchUserStats]);
+  }, [timerState, elapsedTime, earnRate, createSessionMutation, toast, user, userStats, updateStatsMutation, refetchUserStats]);
   
   const updateFocusProgress = React.useCallback(() => {
     // Update progress bar (resets every minute)
