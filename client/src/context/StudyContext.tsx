@@ -113,10 +113,19 @@ export function StudyProvider({ children }: { children: ReactNode }) {
   const startTimer = React.useCallback(() => {
     if (timerState === 'running') return;
     
-    // Update streak when starting timer
-    apiRequest('POST', '/api/protected/update-streak')
-      .then(() => refetchUserStats())
-      .catch(err => console.error("Error updating streak:", err));
+    // Update streak when starting timer, using silentFail to prevent errors stopping the timer
+    apiRequest('POST', '/api/protected/update-streak', undefined, true)
+      .then(response => {
+        if (response.ok) {
+          refetchUserStats();
+        } else {
+          console.log("Streak update skipped - will try again later");
+        }
+      })
+      .catch(err => {
+        console.error("Error updating streak:", err);
+        // This is a non-critical error, study should continue even if streak update fails
+      });
     
     if (timerState === 'idle') {
       startTimeRef.current = Date.now();

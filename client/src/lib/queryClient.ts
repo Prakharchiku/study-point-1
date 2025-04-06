@@ -11,6 +11,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  silentFail: boolean = false
 ): Promise<Response> {
   const res = await fetch(url, {
     method,
@@ -18,6 +19,12 @@ export async function apiRequest(
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // Handle 401 errors differently for silent fail mode
+  if (silentFail && res.status === 401) {
+    console.warn(`Authentication required for ${url}, but continuing silently`);
+    return res;
+  }
 
   await throwIfResNotOk(res);
   return res;
