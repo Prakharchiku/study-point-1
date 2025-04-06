@@ -133,8 +133,8 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       
       // Award coins every minute
       const currentMinutes = Math.floor(elapsed / 60000);
-      if (currentMinutes > lastCoinUpdate) {
-        const coinsToAdd = earnRate * (currentMinutes - lastCoinUpdate);
+      if (currentMinutes > lastCoinUpdate && currentMinutes > 0) {
+        const coinsToAdd = earnRate;
         
         // Create a study session for each minute to ensure coins are persisted
         createSessionMutation.mutate({
