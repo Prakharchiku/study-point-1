@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, log } from "./vite";
 import { fileURLToPath } from "url"; 
-import { dirname, join } from "path"; // Make sure to import 'path' here
+import { dirname, join } from "path"; // Correct path import
 
 // Compute __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
